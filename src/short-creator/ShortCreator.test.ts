@@ -5,6 +5,9 @@ import fs from "fs-extra";
 
 import { ShortCreator } from "./ShortCreator";
 import { Kokoro } from "./libraries/Kokoro";
+vi.mock("./libraries/openaiTTS", () => ({
+  OpenAITTS: { generate: vi.fn().mockResolvedValue({ audio: new ArrayBuffer(8), audioLength: 1.0 }) },
+}));
 import { Remotion } from "./libraries/Remotion";
 import { Whisper } from "./libraries/Whisper";
 import { FFMpeg } from "./libraries/FFmpeg";
@@ -192,11 +195,11 @@ test("test me", async () => {
   const videoId = shortCreator.addToQueue(
     [
       {
-        text: "test",
-        searchTerms: ["test"],
+        text: "سلام دنیا",
+        searchTerms: ["طبیعت", "دریا"],
       },
     ],
-    {},
+    { language: "fa" },
   );
 
   // list videos while the video is being processed

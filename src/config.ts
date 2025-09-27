@@ -46,6 +46,8 @@ export class Config {
   public whisperVersion: string = whisperVersion;
   public whisperModel: whisperModels = defaultWhisperModel;
   public kokoroModelPrecision: kokoroModelPrecision = "fp32";
+  public language: string = "en";
+  public openaiApiKey?: string;
 
   // docker-specific, performance-related settings to prevent memory issues
   public concurrency?: number;
@@ -80,9 +82,16 @@ export class Config {
     this.port = process.env.PORT ? parseInt(process.env.PORT) : defaultPort;
     this.runningInDocker = process.env.DOCKER === "true";
     this.devMode = process.env.DEV === "true";
+    this.language = process.env.LANGUAGE || "en";
+    this.openaiApiKey = process.env.OPENAI_API_KEY;
 
     if (process.env.WHISPER_MODEL) {
       this.whisperModel = process.env.WHISPER_MODEL as whisperModels;
+    } else {
+      // Choose a multilingual model automatically for Persian
+      if (this.language.toLowerCase() === "fa") {
+        this.whisperModel = "large-v3-turbo";
+      }
     }
     if (process.env.KOKORO_MODEL_PRECISION) {
       this.kokoroModelPrecision = process.env

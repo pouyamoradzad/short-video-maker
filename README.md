@@ -218,6 +218,8 @@ You can load it on http://localhost:3123
 | LOG_LEVEL       | pino log level                                                  | info    |
 | WHISPER_VERBOSE | whether the output of whisper.cpp should be forwarded to stdout | false   |
 | PORT            | the port the server will listen on                              | 3123    |
+| LANGUAGE        | Content language, `en` or `fa`                                  | en      |
+| OPENAI_API_KEY  | Required for Persian TTS (OpenAI TTS)                           |         |
 
 ## ⚙️ System configuration
 
@@ -293,7 +295,8 @@ curl --location 'localhost:3123/api/short-video' \
     ],
     "config": {
       "paddingBack": 1500,
-      "music": "chill"
+      "music": "chill",
+      "language": "fa"
     }
 }'
 ```

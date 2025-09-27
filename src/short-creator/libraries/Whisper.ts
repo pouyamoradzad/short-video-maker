@@ -28,7 +28,7 @@ export class Whisper {
         model: config.whisperModel,
         folder: path.join(config.whisperInstallPath, "models"),
         printOutput: config.whisperVerbose,
-        onProgress: (downloadedBytes, totalBytes) => {
+        onProgress: (downloadedBytes: number, totalBytes: number) => {
           const progress = `${Math.round((downloadedBytes / totalBytes) * 100)}%`;
           logger.debug(
             { progress, model: config.whisperModel },
@@ -54,19 +54,21 @@ export class Whisper {
       inputPath: audioPath,
       tokenLevelTimestamps: true,
       printOutput: this.config.whisperVerbose,
-      onProgress: (progress) => {
+      language: this.config.language === "fa" ? "auto" : undefined,
+      onProgress: (progress: string) => {
         logger.debug({ audioPath }, `Transcribing is ${progress} complete`);
       },
     });
     logger.debug({ audioPath }, "Transcription finished, creating captions");
 
     const captions: Caption[] = [];
-    transcription.forEach((record) => {
+    const isPersian = this.config.language === "fa";
+    transcription.forEach((record: any) => {
       if (record.text === "") {
         return;
       }
 
-      record.tokens.forEach((token) => {
+      record.tokens.forEach((token: any) => {
         if (token.text.startsWith("[_TT")) {
           return;
         }
@@ -81,7 +83,7 @@ export class Whisper {
           return;
         }
         captions.push({
-          text: token.text,
+          text: isPersian ? token.text.trim() : token.text,
           startMs: record.offsets.from,
           endMs: record.offsets.to,
         });
