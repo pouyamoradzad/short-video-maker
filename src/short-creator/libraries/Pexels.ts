@@ -10,6 +10,22 @@ const retryTimes = 3;
 
 export class PexelsAPI {
   constructor(private API_KEY: string) {}
+  private async translateToEnglish(term: string): Promise<string> {
+    const hasPersian = /[\u0600-\u06FF]/.test(term);
+    if (!hasPersian) return term;
+    try {
+      const res = await fetch("https://libretranslate.com/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q: term, source: "fa", target: "en", format: "text" }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { translatedText?: string };
+        return data.translatedText || term;
+      }
+    } catch (_err) {}
+    return term;
+  }
 
   private async _findVideo(
     searchTerm: string,
@@ -21,14 +37,15 @@ export class PexelsAPI {
     if (!this.API_KEY) {
       throw new Error("API key not set");
     }
+    const translatedTerm = await this.translateToEnglish(searchTerm);
     logger.debug(
-      { searchTerm, minDurationSeconds, orientation },
+      { searchTerm, query: translatedTerm, minDurationSeconds, orientation },
       "Searching for video in Pexels API",
     );
     const headers = new Headers();
     headers.append("Authorization", this.API_KEY);
     const response = await fetch(
-      `https://api.pexels.com/videos/search?orientation=${orientation}&size=medium&per_page=80&query=${encodeURIComponent(searchTerm)}`,
+      `https://api.pexels.com/videos/search?orientation=${orientation}&size=medium&per_page=80&query=${encodeURIComponent(translatedTerm)}`,
       {
         method: "GET",
         headers,

@@ -7,6 +7,7 @@ import https from "https";
 import http from "http";
 
 import { Kokoro } from "./libraries/Kokoro";
+import { OpenAITTS } from "./libraries/openaiTTS";
 import { Remotion } from "./libraries/Remotion";
 import { Whisper } from "./libraries/Whisper";
 import { FFMpeg } from "./libraries/FFmpeg";
@@ -108,10 +109,19 @@ export class ShortCreator {
 
     let index = 0;
     for (const scene of inputScenes) {
-      const audio = await this.kokoro.generate(
-        scene.text,
-        config.voice ?? "af_heart",
-      );
+      const language = (config.language || this.config.language || "en").toLowerCase();
+      const usePersian = language.toLowerCase() === "fa";
+
+      const audio = usePersian
+        ? await OpenAITTS.generate({
+            text: scene.text,
+            apiKey: this.config.openaiApiKey,
+            language: "fa",
+          })
+        : await this.kokoro.generate(
+            scene.text,
+            config.voice ?? "af_heart",
+          );
       let { audioLength } = audio;
       const { audio: audioStream } = audio;
 
@@ -137,6 +147,7 @@ export class ShortCreator {
       const captions = await this.whisper.CreateCaption(tempWavPath);
 
       await this.ffmpeg.saveToMp3(audioStream, tempMp3Path);
+      // translate search terms if Persian
       const video = await this.pexelsApi.findVideo(
         scene.searchTerms,
         audioLength,
@@ -166,7 +177,7 @@ export class ShortCreator {
             });
           })
           .on("error", (err: Error) => {
-            fs.unlink(tempVideoPath, () => {}); // Delete the file if download failed
+            fs.unlink(tempVideoPath, () => {});
             logger.error(err, "Error downloading video:");
             reject(err);
           });
@@ -205,6 +216,7 @@ export class ShortCreator {
             captionPosition: config.captionPosition,
           },
           musicVolume: config.musicVolume,
+          language: (config.language || this.config.language) as any,
         },
       },
       videoId,

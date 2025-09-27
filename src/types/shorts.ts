@@ -116,6 +116,10 @@ export const renderConfig = z.object({
     .nativeEnum(MusicVolumeEnum)
     .optional()
     .describe("Volume of the music, default is high"),
+  language: z
+    .enum(["en", "fa"]) // extendable later
+    .optional()
+    .describe("Language of the content, e.g. en or fa"),
 });
 export type RenderConfig = z.infer<typeof renderConfig>;
 

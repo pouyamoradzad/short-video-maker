@@ -7,7 +7,8 @@ import {
   OffthreadVideo,
 } from "remotion";
 import { z } from "zod";
-import { loadFont } from "@remotion/google-fonts/BarlowCondensed";
+import { loadFont as loadBarlow } from "@remotion/google-fonts/BarlowCondensed";
+import { loadFont as loadVazirmatn } from "@remotion/google-fonts/Vazirmatn";
 
 import {
   calculateVolume,
@@ -15,7 +16,8 @@ import {
   shortVideoSchema,
 } from "../utils";
 
-const { fontFamily } = loadFont(); // "Barlow Condensed"
+const { fontFamily: barlow } = loadBarlow();
+const { fontFamily: vazirmatn } = loadVazirmatn();
 
 export const PortraitVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
   scenes,
@@ -26,6 +28,8 @@ export const PortraitVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
   const { fps } = useVideoConfig();
 
   const captionBackgroundColor = config.captionBackgroundColor ?? "blue";
+  const isRTL = config.language === "fa";
+  const fontFamily = isRTL ? vazirmatn : barlow;
 
   const activeStyle = {
     backgroundColor: captionBackgroundColor,
@@ -102,7 +106,8 @@ export const PortraitVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
                   <div
                     style={{
                       position: "absolute",
-                      left: 0,
+                      left: isRTL ? undefined : 0,
+                      right: isRTL ? 0 : undefined,
                       width: "100%",
                       ...captionStyle,
                     }}
@@ -121,7 +126,8 @@ export const PortraitVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
                             textAlign: "center",
                             width: "100%",
                             // uppercase
-                            textTransform: "uppercase",
+                            textTransform: isRTL ? "none" : "uppercase",
+                            direction: isRTL ? "rtl" : "ltr",
                           }}
                           key={`scene-${i}-page-${j}-line-${k}`}
                         >
@@ -141,7 +147,7 @@ export const PortraitVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
                                 >
                                   {text.text}
                                 </span>
-                                {l < line.texts.length - 1 ? " " : ""}
+                                {!isRTL && l < line.texts.length - 1 ? " " : ""}
                               </>
                             );
                           })}
