@@ -28,6 +28,7 @@ export type Scene = {
     url: string;
     duration: number;
   };
+  language?: LanguageEnum;
 };
 
 export const sceneInput = z.object({
@@ -83,6 +84,16 @@ export enum MusicVolumeEnum {
   high = "high",
 }
 
+export enum LanguageEnum {
+  en = "en",
+  fa = "fa",
+}
+
+export enum TtsEngineEnum {
+  kokoro = "kokoro",
+  openai = "openai",
+}
+
 export const renderConfig = z.object({
   paddingBack: z
     .number()
@@ -116,6 +127,14 @@ export const renderConfig = z.object({
     .nativeEnum(MusicVolumeEnum)
     .optional()
     .describe("Volume of the music, default is high"),
+  language: z
+    .nativeEnum(LanguageEnum)
+    .optional()
+    .describe("Language for TTS and captions, default is en"),
+  ttsEngine: z
+    .nativeEnum(TtsEngineEnum)
+    .optional()
+    .describe("TTS engine to use, default is kokoro for English, openai for Persian"),
 });
 export type RenderConfig = z.infer<typeof renderConfig>;
 

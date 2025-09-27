@@ -68,26 +68,30 @@ You can find example n8n workflows created with the REST/MCP server [in this rep
 # Features
 
 - Generate complete short videos from text prompts
-- Text-to-speech conversion
-- Automatic caption generation and styling
+- Text-to-speech conversion (English and Persian/Farsi support)
+- Automatic caption generation and styling with RTL support
 - Background video search and selection via Pexels
 - Background music with genre/mood selection
+- Multilingual support with automatic language detection
 - Serve as both REST API and Model Context Protocol (MCP) server
 
 # How It Works
 
 Shorts Creator takes simple text inputs and search terms, then:
 
-1. Converts text to speech using Kokoro TTS
-2. Generates accurate captions via Whisper
-3. Finds relevant background videos from Pexels
-4. Composes all elements with Remotion
-5. Renders a professional-looking short video with perfectly timed captions
+1. Automatically detects the language (English/Persian) from input text
+2. Converts text to speech using Kokoro TTS (English) or OpenAI TTS (Persian)
+3. Generates accurate captions via Whisper with multilingual support
+4. Translates Persian search terms to English for Pexels video search
+5. Finds relevant background videos from Pexels
+6. Composes all elements with Remotion using language-appropriate fonts and RTL support
+7. Renders a professional-looking short video with perfectly timed captions
 
 # Limitations
 
-- The project only capable generating videos with English voiceover (kokoro-js doesn’t support other languages at the moment)
 - The background videos are sourced from Pexels
+- Persian TTS requires OpenAI API key (free tier available)
+- Persian search terms are automatically translated to English for Pexels video search
 
 # General Requirements
 
@@ -115,37 +119,40 @@ There are three docker images, for three different use cases. Generally speaking
 
 ### Tiny
 
-- Uses the `tiny.en` whisper.cpp model
+- Uses the `tiny.en` whisper.cpp model (English) and `tiny` model (multilingual)
 - Uses the `q4` quantized kokoro model
+- Supports Persian language with OpenAI TTS (set `WHISPER_MODEL=tiny` for Persian)
 - `CONCURRENCY=1` to overcome OOM errors coming from Remotion with limited resources
 - `VIDEO_CACHE_SIZE_IN_BYTES=2097152000` (2gb) to overcome OOM errors coming from Remotion with limited resources
 
 ```jsx
-docker run -it --rm --name short-video-maker -p 3123:3123 -e LOG_LEVEL=debug -e PEXELS_API_KEY= gyoridavid/short-video-maker:latest-tiny
+docker run -it --rm --name short-video-maker -p 3123:3123 -e LOG_LEVEL=debug -e PEXELS_API_KEY= -e OPENAI_API_KEY= gyoridavid/short-video-maker:latest-tiny
 ```
 
 ### Normal
 
-- Uses the `base.en` whisper.cpp model
+- Uses the `base` whisper.cpp model (multilingual, supports Persian)
 - Uses the `fp32` kokoro model
+- Full Persian language support with OpenAI TTS
 - `CONCURRENCY=1` to overcome OOM errors coming from Remotion with limited resources
 - `VIDEO_CACHE_SIZE_IN_BYTES=2097152000` (2gb) to overcome OOM errors coming from Remotion with limited resources
 
 ```jsx
-docker run -it --rm --name short-video-maker -p 3123:3123 -e LOG_LEVEL=debug -e PEXELS_API_KEY= gyoridavid/short-video-maker:latest
+docker run -it --rm --name short-video-maker -p 3123:3123 -e LOG_LEVEL=debug -e PEXELS_API_KEY= -e OPENAI_API_KEY= gyoridavid/short-video-maker:latest
 ```
 
 ### Cuda
 
 If you own an Nvidia GPU and you want use a larger whisper model with GPU acceleration, you can use the CUDA optimised Docker image.
 
-- Uses the `medium.en` whisper.cpp model (with GPU acceleration)
+- Uses the `medium` whisper.cpp model (multilingual with GPU acceleration)
 - Uses `fp32` kokoro model
+- Full Persian language support with OpenAI TTS and GPU acceleration
 - `CONCURRENCY=1` to overcome OOM errors coming from Remotion with limited resources
 - `VIDEO_CACHE_SIZE_IN_BYTES=2097152000` (2gb) to overcome OOM errors coming from Remotion with limited resources
 
 ```jsx
-docker run -it --rm --name short-video-maker -p 3123:3123 -e LOG_LEVEL=debug -e PEXELS_API_KEY= --gpus=all gyoridavid/short-video-maker:latest-cuda
+docker run -it --rm --name short-video-maker -p 3123:3123 -e LOG_LEVEL=debug -e PEXELS_API_KEY= -e OPENAI_API_KEY= --gpus=all gyoridavid/short-video-maker:latest-cuda
 ```
 
 ## Docker compose
@@ -161,6 +168,8 @@ services:
     environment:
       - LOG_LEVEL=debug
       - PEXELS_API_KEY=
+      - OPENAI_API_KEY=  # Required for Persian language support
+      - DEFAULT_LANGUAGE=en  # Set to 'fa' for Persian by default
     ports:
       - "3123:3123"
     volumes:
@@ -208,6 +217,73 @@ Windows is **NOT** supported at the moment (whisper.cpp installation fails occas
 
 You can load it on http://localhost:3123
 
+# Persian Language Support 🇮🇷
+
+The short-video-maker now supports Persian/Farsi language with the following features:
+
+## Features
+- **Persian Text-to-Speech:** Uses OpenAI TTS for high-quality Persian voiceovers
+- **Persian Captions:** Automatic caption generation with RTL (Right-to-Left) text rendering
+- **Persian Fonts:** Support for Persian Unicode fonts (Noto Sans Arabic, Vazir, Sahel)
+- **Automatic Translation:** Persian search terms are automatically translated to English for Pexels video search
+- **Language Detection:** Automatic detection of Persian text from input
+
+## Setup Requirements
+
+1. **OpenAI API Key:** Required for Persian TTS and translation
+   ```bash
+   export OPENAI_API_KEY="your-openai-api-key"
+   ```
+
+2. **Whisper Model:** Use multilingual Whisper models (default: `medium`)
+   ```bash
+   export WHISPER_MODEL="medium"  # Supports Persian
+   ```
+
+## Quick Start with Persian
+
+```bash
+# Set environment variables
+export OPENAI_API_KEY="your-openai-api-key"
+export PEXELS_API_KEY="your-pexels-api-key"
+export DEFAULT_LANGUAGE="fa"
+
+# Run with Docker
+docker run -it --rm --name short-video-maker \
+  -p 3123:3123 \
+  -e OPENAI_API_KEY="$OPENAI_API_KEY" \
+  -e PEXELS_API_KEY="$PEXELS_API_KEY" \
+  -e DEFAULT_LANGUAGE="fa" \
+  -e LOG_LEVEL=debug \
+  gyoridavid/short-video-maker:latest
+```
+
+## Persian Video Examples
+
+See the `/src/examples/persian-video-example.ts` file for complete examples of creating Persian videos.
+
+### Quick Demo
+
+Run the Persian language demo script to see the functionality in action:
+
+```bash
+chmod +x scripts/demo-persian.sh
+./scripts/demo-persian.sh
+```
+
+This script will create two Persian videos demonstrating different themes (nature and technology) with automatic translation and RTL caption rendering.
+
+## Important Notes for Persian Language
+
+1. **Docker Images:** All Docker images now support Persian:
+   - `tiny`: Set `WHISPER_MODEL=tiny` for Persian support
+   - `normal`: Uses `base` model (multilingual by default)
+   - `cuda`: Uses `medium` model (multilingual with GPU acceleration)
+
+2. **Fonts:** Persian fonts are automatically loaded from Google Fonts CDN when Persian text is detected.
+
+3. **API Costs:** OpenAI TTS usage will incur costs based on OpenAI's pricing for text-to-speech API calls.
+
 # Environment variables
 
 ## 🟢 Configuration
@@ -215,6 +291,8 @@ You can load it on http://localhost:3123
 | key             | description                                                     | default |
 | --------------- | --------------------------------------------------------------- | ------- |
 | PEXELS_API_KEY  | [your (free) Pexels API key](https://www.pexels.com/api/)       |         |
+| OPENAI_API_KEY  | [OpenAI API key](https://platform.openai.com/api-keys) for Persian TTS and translation (optional) |         |
+| DEFAULT_LANGUAGE | Default language for video generation (`en` or `fa`)           | en      |
 | LOG_LEVEL       | pino log level                                                  | info    |
 | WHISPER_VERBOSE | whether the output of whisper.cpp should be forwarded to stdout | false   |
 | PORT            | the port the server will listen on                              | 3123    |
@@ -247,6 +325,8 @@ You can load it on http://localhost:3123
 | voice                  | The Kokoro voice.                                                                                              | `af_heart` |
 | orientation            | The video orientation. Possible options are `portrait` and `landscape`                                         | `portrait` |
 | musicVolume            | Set the volume of the background music. Possible options are `low` `medium` `high` and `muted`                 | `high`     |
+| language               | Language for TTS and captions. Options: `en` (English), `fa` (Persian/Farsi)                                  | `en`       |
+| ttsEngine              | TTS engine to use. Options: `kokoro` (English only), `openai` (multilingual). Auto-selected based on language | auto       |
 
 # Usage
 
@@ -303,6 +383,38 @@ curl --location 'localhost:3123/api/short-video' \
     "videoId": "cma9sjly700020jo25vwzfnv9"
 }
 ```
+
+#### Persian Language Example
+
+```bash
+curl --location 'localhost:3123/api/short-video' \
+--header 'Content-Type: application/json' \
+--data '{
+    "scenes": [
+      {
+        "text": "سلام دنیا! این یک ویدیو فارسی است",
+        "searchTerms": ["طبیعت", "زیبایی"]
+      },
+      {
+        "text": "فناوری زندگی ما را تغییر داده است",
+        "searchTerms": ["فناوری", "کامپیوتر"]
+      }
+    ],
+    "config": {
+      "language": "fa",
+      "ttsEngine": "openai",
+      "paddingBack": 2000,
+      "music": "chill",
+      "captionPosition": "bottom"
+    }
+}'
+```
+
+**Note:** Persian language support requires an OpenAI API key. The system will:
+- Automatically detect Persian text and use OpenAI TTS
+- Generate Persian captions with RTL (Right-to-Left) text rendering
+- Translate Persian search terms to English for Pexels video search
+- Use Persian-compatible fonts (Noto Sans Arabic, Vazir, Sahel)
 
 ### GET `/api/short-video/{id}/status`
 
@@ -450,7 +562,12 @@ While each VPS provider is different, and it’s impossible to provide configura
 
 ## Can I use other languages? (French, German etc.)
 
-Unfortunately, it’s not possible at the moment. Kokoro-js only supports English.
+The project now supports Persian/Farsi language in addition to English. For Persian:
+- Set up an OpenAI API key for TTS and translation services
+- Use `language: "fa"` in your configuration
+- The system will automatically detect Persian text and handle RTL rendering
+
+Support for other languages may be added in future versions.
 
 ## Can I pass in images and videos and can it stitch it together
 

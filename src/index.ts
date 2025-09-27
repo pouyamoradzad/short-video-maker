@@ -3,6 +3,8 @@ import path from "path";
 import fs from "fs-extra";
 
 import { Kokoro } from "./short-creator/libraries/Kokoro";
+import { OpenAITTS } from "./short-creator/libraries/OpenAITTS";
+import { TranslationService } from "./short-creator/libraries/TranslationService";
 import { Remotion } from "./short-creator/libraries/Remotion";
 import { Whisper } from "./short-creator/libraries/Whisper";
 import { FFMpeg } from "./short-creator/libraries/FFmpeg";
@@ -35,6 +37,19 @@ async function main() {
   const remotion = await Remotion.init(config);
   logger.debug("initializing kokoro");
   const kokoro = await Kokoro.init(config.kokoroModelPrecision);
+  
+  // Initialize OpenAI services if API key is available
+  let openaiTts: OpenAITTS | null = null;
+  let translationService: TranslationService | null = null;
+  if (config.openaiApiKey) {
+    logger.debug("initializing OpenAI TTS");
+    openaiTts = OpenAITTS.init(config.openaiApiKey);
+    logger.debug("initializing translation service");
+    translationService = TranslationService.init(config.openaiApiKey);
+  } else {
+    logger.warn("OpenAI API key not provided - Persian language support will be limited");
+  }
+  
   logger.debug("initializing whisper");
   const whisper = await Whisper.init(config);
   logger.debug("initializing ffmpeg");
@@ -46,6 +61,8 @@ async function main() {
     config,
     remotion,
     kokoro,
+    openaiTts,
+    translationService,
     whisper,
     ffmpeg,
     pexelsApi,

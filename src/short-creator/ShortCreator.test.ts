@@ -90,13 +90,21 @@ vi.mock("kokoro-js", () => {
   return {
     KokoroTTS: {
       from_pretrained: vi.fn().mockResolvedValue({
-        generate: vi.fn().mockResolvedValue({
-          toWav: vi.fn().mockReturnValue(new ArrayBuffer(8)),
-          audio: new ArrayBuffer(8),
-          sampling_rate: 44100,
+        stream: vi.fn().mockImplementation(async function* () {
+          yield {
+            audio: {
+              toWav: () => new ArrayBuffer(8),
+              audio: { length: 8 },
+              sampling_rate: 44100,
+            },
+          };
         }),
       }),
     },
+    TextSplitterStream: vi.fn().mockImplementation(() => ({
+      push: vi.fn(),
+      close: vi.fn(),
+    })),
   };
 });
 
@@ -183,6 +191,8 @@ test("test me", async () => {
     config,
     remotion,
     kokoro,
+    null, // openaiTts
+    null, // translationService
     whisper,
     ffmpeg,
     pexelsAPI,

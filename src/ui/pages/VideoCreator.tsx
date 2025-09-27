@@ -28,6 +28,8 @@ import {
   VoiceEnum,
   OrientationEnum,
   MusicVolumeEnum,
+  LanguageEnum,
+  TtsEngineEnum,
 } from "../../types/shorts";
 
 interface SceneFormData {
@@ -48,6 +50,8 @@ const VideoCreator: React.FC = () => {
     voice: VoiceEnum.af_heart,
     orientation: OrientationEnum.portrait,
     musicVolume: MusicVolumeEnum.high,
+    language: LanguageEnum.en,
+    ttsEngine: TtsEngineEnum.kokoro,
   });
 
   const [loading, setLoading] = useState(false);
@@ -195,6 +199,10 @@ const VideoCreator: React.FC = () => {
                   onChange={(e) =>
                     handleSceneChange(index, "text", e.target.value)
                   }
+                  helperText={config.language === LanguageEnum.fa ? 
+                    "Enter Persian text here. Language will be automatically detected." : 
+                    "Enter the text to be spoken in the video"
+                  }
                   required
                 />
               </Grid>
@@ -207,7 +215,10 @@ const VideoCreator: React.FC = () => {
                   onChange={(e) =>
                     handleSceneChange(index, "searchTerms", e.target.value)
                   }
-                  helperText="Enter keywords for background video, separated by commas"
+                  helperText={config.language === LanguageEnum.fa ? 
+                    "Enter Persian keywords for background video (will be auto-translated for search)" : 
+                    "Enter keywords for background video, separated by commas"
+                  }
                   required
                 />
               </Grid>
@@ -359,6 +370,53 @@ const VideoCreator: React.FC = () => {
                   ))}
                 </Select>
               </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Language</InputLabel>
+                <Select
+                  value={config.language}
+                  onChange={(e) =>
+                    handleConfigChange("language", e.target.value)
+                  }
+                  label="Language"
+                  required
+                >
+                  <MenuItem value={LanguageEnum.en}>
+                    🇺🇸 English
+                  </MenuItem>
+                  <MenuItem value={LanguageEnum.fa}>
+                    🇮🇷 Persian/Farsi
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>TTS Engine</InputLabel>
+                <Select
+                  value={config.ttsEngine}
+                  onChange={(e) =>
+                    handleConfigChange("ttsEngine", e.target.value)
+                  }
+                  label="TTS Engine"
+                  required
+                >
+                  <MenuItem value={TtsEngineEnum.kokoro}>
+                    Kokoro (English only)
+                  </MenuItem>
+                  <MenuItem value={TtsEngineEnum.openai}>
+                    OpenAI TTS (Multilingual)
+                  </MenuItem>
+                </Select>
+              </FormControl>
+              {config.language === LanguageEnum.fa && (
+                <Typography variant="caption" color="textSecondary" sx={{ mt: 1 }}>
+                  Note: Persian language requires OpenAI API key
+                </Typography>
+              )}
             </Grid>
           </Grid>
         </Paper>

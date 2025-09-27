@@ -5,6 +5,7 @@ import {
   type CaptionLine,
   type OrientationEnum,
   MusicVolumeEnum,
+  LanguageEnum,
 } from "../types/shorts";
 import { AvailableComponentsEnum, type OrientationConfig } from "./types";
 
@@ -17,6 +18,7 @@ export const shortVideoSchema = z.object({
         duration: z.number(),
       }),
       video: z.string(),
+      language: z.nativeEnum(LanguageEnum).optional(),
     }),
   ),
   config: z.object({

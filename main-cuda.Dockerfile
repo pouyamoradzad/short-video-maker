@@ -16,7 +16,7 @@ RUN git clone https://github.com/ggerganov/whisper.cpp.git -b v1.7.1 --depth 1 .
 RUN make clean
 RUN GGML_CUDA=1 make -j
 
-RUN sh ./models/download-ggml-model.sh medium.en
+RUN sh ./models/download-ggml-model.sh medium
 
 FROM ${BASE_CUDA_RUN_CONTAINER} AS base
 

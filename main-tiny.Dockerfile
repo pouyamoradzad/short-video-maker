@@ -15,6 +15,7 @@ RUN git checkout v1.7.1
 RUN make
 WORKDIR /whisper/models
 RUN sh ./download-ggml-model.sh tiny.en
+RUN sh ./download-ggml-model.sh tiny
 
 FROM node:22-bookworm-slim AS base
 ENV DEBIAN_FRONTEND=noninteractive

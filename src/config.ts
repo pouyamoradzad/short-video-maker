@@ -3,12 +3,12 @@ import "dotenv/config";
 import os from "os";
 import fs from "fs-extra";
 import pino from "pino";
-import { kokoroModelPrecision, whisperModels } from "./types/shorts";
+import { kokoroModelPrecision, whisperModels, LanguageEnum } from "./types/shorts";
 
 const defaultLogLevel: pino.Level = "info";
 const defaultPort = 3123;
 const whisperVersion = "1.7.1";
-const defaultWhisperModel: whisperModels = "medium.en"; // possible options: "tiny", "tiny.en", "base", "base.en", "small", "small.en", "medium", "medium.en", "large-v1", "large-v2", "large-v3", "large-v3-turbo"
+const defaultWhisperModel: whisperModels = "medium"; // For multilingual support including Persian; possible options: "tiny", "tiny.en", "base", "base.en", "small", "small.en", "medium", "medium.en", "large-v1", "large-v2", "large-v3", "large-v3-turbo"
 
 // Create the global logger
 const versionNumber = process.env.npm_package_version;
@@ -38,6 +38,8 @@ export class Config {
   public packageDirPath: string;
   public musicDirPath: string;
   public pexelsApiKey: string;
+  public openaiApiKey: string;
+  public defaultLanguage: LanguageEnum;
   public logLevel: pino.Level;
   public whisperVerbose: boolean;
   public port: number;
@@ -75,6 +77,8 @@ export class Config {
     this.musicDirPath = path.join(this.staticDirPath, "music");
 
     this.pexelsApiKey = process.env.PEXELS_API_KEY as string;
+    this.openaiApiKey = process.env.OPENAI_API_KEY as string;
+    this.defaultLanguage = (process.env.DEFAULT_LANGUAGE as LanguageEnum) || LanguageEnum.en;
     this.logLevel = (process.env.LOG_LEVEL || defaultLogLevel) as pino.Level;
     this.whisperVerbose = process.env.WHISPER_VERBOSE === "true";
     this.port = process.env.PORT ? parseInt(process.env.PORT) : defaultPort;

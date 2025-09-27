@@ -14,8 +14,15 @@ import {
   createCaptionPages,
   shortVideoSchema,
 } from "../utils";
+import { LanguageEnum } from "../../types/shorts";
+import { PersianFontLoader, PERSIAN_FONT_FAMILY } from "../utils/FontLoader";
 
 const { fontFamily } = loadFont(); // "Barlow Condensed"
+
+// Function to get appropriate font family based on language
+const getFontFamily = (language?: LanguageEnum): string => {
+  return language === LanguageEnum.fa ? PERSIAN_FONT_FAMILY : fontFamily;
+};
 
 export const LandscapeVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
   scenes,
@@ -49,8 +56,12 @@ export const LandscapeVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
 
   const [musicVolume, musicMuted] = calculateVolume(config.musicVolume);
 
+  // Check if any scene contains Persian text
+  const hasPersianText = scenes.some(scene => scene.language === LanguageEnum.fa);
+
   return (
-    <AbsoluteFill style={{ backgroundColor: "white" }}>
+    <PersianFontLoader>
+      <AbsoluteFill style={{ backgroundColor: "white" }}>
       <Audio
         loop
         src={music.url}
@@ -112,7 +123,7 @@ export const LandscapeVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
                         <p
                           style={{
                             fontSize: "8em",
-                            fontFamily: fontFamily,
+                            fontFamily: getFontFamily(scenes[i]?.language),
                             fontWeight: "black",
                             color: "white",
                             WebkitTextStroke: "2px black",
@@ -120,8 +131,10 @@ export const LandscapeVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
                             textShadow: "0px 0px 10px black",
                             textAlign: "center",
                             width: "100%",
-                            // uppercase
-                            textTransform: "uppercase",
+                            // RTL direction for Persian text
+                            direction: scenes[i]?.language === LanguageEnum.fa ? "rtl" : "ltr",
+                            // Only uppercase for non-Persian text
+                            textTransform: scenes[i]?.language === LanguageEnum.fa ? "none" : "uppercase",
                           }}
                           key={`scene-${i}-page-${j}-line-${k}`}
                         >
@@ -155,6 +168,7 @@ export const LandscapeVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
           </Sequence>
         );
       })}
-    </AbsoluteFill>
+      </AbsoluteFill>
+    </PersianFontLoader>
   );
 };

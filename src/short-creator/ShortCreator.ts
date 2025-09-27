@@ -7,6 +7,9 @@ import https from "https";
 import http from "http";
 
 import { Kokoro } from "./libraries/Kokoro";
+import { OpenAITTS } from "./libraries/OpenAITTS";
+import { LanguageDetector } from "./libraries/LanguageDetector";
+import { TranslationService } from "./libraries/TranslationService";
 import { Remotion } from "./libraries/Remotion";
 import { Whisper } from "./libraries/Whisper";
 import { FFMpeg } from "./libraries/FFmpeg";
@@ -23,6 +26,10 @@ import type {
   MusicTag,
   MusicForVideo,
 } from "../types/shorts";
+import {
+  LanguageEnum,
+  TtsEngineEnum,
+} from "../types/shorts";
 
 export class ShortCreator {
   private queue: {
@@ -34,6 +41,8 @@ export class ShortCreator {
     private config: Config,
     private remotion: Remotion,
     private kokoro: Kokoro,
+    private openaiTts: OpenAITTS | null,
+    private translationService: TranslationService | null,
     private whisper: Whisper,
     private ffmpeg: FFMpeg,
     private pexelsApi: PexelsAPI,
@@ -106,12 +115,26 @@ export class ShortCreator {
     const orientation: OrientationEnum =
       config.orientation || OrientationEnum.portrait;
 
+    // Detect language from the first scene if not specified
+    const detectedLanguage = config.language || LanguageDetector.detectLanguage(inputScenes[0]?.text || "");
+    const ttsEngine = config.ttsEngine || (detectedLanguage === LanguageEnum.fa ? TtsEngineEnum.openai : TtsEngineEnum.kokoro);
+
+    logger.debug({ detectedLanguage, ttsEngine }, "Language detected and TTS engine selected");
+
     let index = 0;
     for (const scene of inputScenes) {
-      const audio = await this.kokoro.generate(
-        scene.text,
-        config.voice ?? "af_heart",
-      );
+      // Generate audio based on language and TTS engine
+      let audio: { audio: ArrayBuffer; audioLength: number };
+      
+      if (ttsEngine === TtsEngineEnum.openai && this.openaiTts) {
+        audio = await this.openaiTts.generate(scene.text, "alloy", detectedLanguage);
+      } else {
+        audio = await this.kokoro.generate(
+          scene.text,
+          config.voice ?? "af_heart",
+        );
+      }
+      
       let { audioLength } = audio;
       const { audio: audioStream } = audio;
 
@@ -134,11 +157,26 @@ export class ShortCreator {
       tempFiles.push(tempWavPath, tempMp3Path);
 
       await this.ffmpeg.saveNormalizedAudio(audioStream, tempWavPath);
-      const captions = await this.whisper.CreateCaption(tempWavPath);
+      
+      // Pass language to Whisper for better transcription
+      const whisperLanguage = detectedLanguage === LanguageEnum.fa ? "fa" : "en";
+      const captions = await this.whisper.CreateCaption(tempWavPath, whisperLanguage);
 
       await this.ffmpeg.saveToMp3(audioStream, tempMp3Path);
+      
+      // Translate Persian search terms to English for Pexels API
+      let searchTerms = scene.searchTerms;
+      if (detectedLanguage === LanguageEnum.fa && this.translationService) {
+        try {
+          searchTerms = await this.translationService.translateWithFallback(scene.searchTerms);
+          logger.debug({ originalTerms: scene.searchTerms, translatedTerms: searchTerms }, "Search terms translated");
+        } catch (error) {
+          logger.warn(error, "Translation failed, using original terms");
+        }
+      }
+      
       const video = await this.pexelsApi.findVideo(
-        scene.searchTerms,
+        searchTerms,
         audioLength,
         excludeVideoIds,
         orientation,
@@ -181,6 +219,7 @@ export class ShortCreator {
           url: `http://localhost:${this.config.port}/api/tmp/${tempMp3FileName}`,
           duration: audioLength,
         },
+        language: detectedLanguage,
       });
 
       totalDuration += audioLength;
