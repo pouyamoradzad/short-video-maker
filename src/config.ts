@@ -46,6 +46,10 @@ export class Config {
   public whisperVersion: string = whisperVersion;
   public whisperModel: whisperModels = defaultWhisperModel;
   public kokoroModelPrecision: kokoroModelPrecision = "fp32";
+  
+  // Persian language support
+  public openaiApiKey: string;
+  public defaultLanguage: string = "en";
 
   // docker-specific, performance-related settings to prevent memory issues
   public concurrency?: number;
@@ -75,11 +79,13 @@ export class Config {
     this.musicDirPath = path.join(this.staticDirPath, "music");
 
     this.pexelsApiKey = process.env.PEXELS_API_KEY as string;
+    this.openaiApiKey = process.env.OPENAI_API_KEY as string;
     this.logLevel = (process.env.LOG_LEVEL || defaultLogLevel) as pino.Level;
     this.whisperVerbose = process.env.WHISPER_VERBOSE === "true";
     this.port = process.env.PORT ? parseInt(process.env.PORT) : defaultPort;
     this.runningInDocker = process.env.DOCKER === "true";
     this.devMode = process.env.DEV === "true";
+    this.defaultLanguage = process.env.DEFAULT_LANGUAGE || "en";
 
     if (process.env.WHISPER_MODEL) {
       this.whisperModel = process.env.WHISPER_MODEL as whisperModels;
@@ -105,6 +111,11 @@ export class Config {
       throw new Error(
         "PEXELS_API_KEY environment variable is missing. Get your free API key: https://www.pexels.com/api/key/ - see how to run the project: https://github.com/gyoridavid/short-video-maker",
       );
+    }
+    
+    // OpenAI API key is optional - only required for Persian TTS
+    if (!this.openaiApiKey) {
+      logger.warn("OPENAI_API_KEY environment variable is missing. Persian TTS will not be available. Get your API key: https://platform.openai.com/api-keys");
     }
   }
 }

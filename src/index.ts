@@ -7,6 +7,8 @@ import { Remotion } from "./short-creator/libraries/Remotion";
 import { Whisper } from "./short-creator/libraries/Whisper";
 import { FFMpeg } from "./short-creator/libraries/FFmpeg";
 import { PexelsAPI } from "./short-creator/libraries/Pexels";
+import { PersianTTS } from "./short-creator/libraries/PersianTTS";
+import { UnifiedTTS } from "./short-creator/libraries/UnifiedTTS";
 import { Config } from "./config";
 import { ShortCreator } from "./short-creator/ShortCreator";
 import { logger } from "./logger";
@@ -35,6 +37,10 @@ async function main() {
   const remotion = await Remotion.init(config);
   logger.debug("initializing kokoro");
   const kokoro = await Kokoro.init(config.kokoroModelPrecision);
+  logger.debug("initializing persian TTS");
+  const persianTTS = new PersianTTS(config.openaiApiKey);
+  logger.debug("initializing unified TTS");
+  const unifiedTTS = new UnifiedTTS(kokoro, persianTTS);
   logger.debug("initializing whisper");
   const whisper = await Whisper.init(config);
   logger.debug("initializing ffmpeg");
@@ -45,7 +51,7 @@ async function main() {
   const shortCreator = new ShortCreator(
     config,
     remotion,
-    kokoro,
+    unifiedTTS,
     whisper,
     ffmpeg,
     pexelsApi,
@@ -61,7 +67,7 @@ async function main() {
         "testing if the installation was successful - this may take a while...",
       );
       try {
-        const audioBuffer = (await kokoro.generate("hi", "af_heart")).audio;
+        const audioBuffer = (await unifiedTTS.generate("hi", "af_heart", "en")).audio;
         await ffmpeg.createMp3DataUri(audioBuffer);
         await pexelsApi.findVideo(["dog"], 2.4);
         const testVideoPath = path.join(config.tempDirPath, "test.mp4");

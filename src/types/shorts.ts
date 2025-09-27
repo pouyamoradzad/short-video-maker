@@ -83,6 +83,13 @@ export enum MusicVolumeEnum {
   high = "high",
 }
 
+export enum LanguageEnum {
+  en = "en",
+  fa = "fa",
+}
+
+export type Language = `${LanguageEnum}`;
+
 export const renderConfig = z.object({
   paddingBack: z
     .number()
@@ -116,6 +123,10 @@ export const renderConfig = z.object({
     .nativeEnum(MusicVolumeEnum)
     .optional()
     .describe("Volume of the music, default is high"),
+  language: z
+    .nativeEnum(LanguageEnum)
+    .optional()
+    .describe("Language for TTS and captions, default is en"),
 });
 export type RenderConfig = z.infer<typeof renderConfig>;
 
