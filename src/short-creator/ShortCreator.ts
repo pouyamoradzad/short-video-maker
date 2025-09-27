@@ -11,9 +11,11 @@ import { Remotion } from "./libraries/Remotion";
 import { Whisper } from "./libraries/Whisper";
 import { FFMpeg } from "./libraries/FFmpeg";
 import { PexelsAPI } from "./libraries/Pexels";
+import { UnifiedTTS } from "./libraries/UnifiedTTS";
 import { Config } from "../config";
 import { logger } from "../logger";
 import { MusicManager } from "./music";
+import { detectLanguage, translateSearchTermsForPexels } from "../utils/languageDetection";
 import type {
   SceneInput,
   RenderConfig,
@@ -22,6 +24,7 @@ import type {
   MusicMoodEnum,
   MusicTag,
   MusicForVideo,
+  Language,
 } from "../types/shorts";
 
 export class ShortCreator {
@@ -33,7 +36,7 @@ export class ShortCreator {
   constructor(
     private config: Config,
     private remotion: Remotion,
-    private kokoro: Kokoro,
+    private unifiedTTS: UnifiedTTS,
     private whisper: Whisper,
     private ffmpeg: FFMpeg,
     private pexelsApi: PexelsAPI,
@@ -108,9 +111,13 @@ export class ShortCreator {
 
     let index = 0;
     for (const scene of inputScenes) {
-      const audio = await this.kokoro.generate(
+      // Detect language from text if not specified in config
+      const detectedLanguage = config.language || detectLanguage(scene.text);
+      
+      const audio = await this.unifiedTTS.generate(
         scene.text,
         config.voice ?? "af_heart",
+        detectedLanguage,
       );
       let { audioLength } = audio;
       const { audio: audioStream } = audio;
@@ -134,11 +141,17 @@ export class ShortCreator {
       tempFiles.push(tempWavPath, tempMp3Path);
 
       await this.ffmpeg.saveNormalizedAudio(audioStream, tempWavPath);
-      const captions = await this.whisper.CreateCaption(tempWavPath);
+      const captions = await this.whisper.CreateCaption(tempWavPath, detectedLanguage);
 
       await this.ffmpeg.saveToMp3(audioStream, tempMp3Path);
+      
+      // Translate search terms for Persian content
+      const translatedSearchTerms = detectedLanguage === "fa" 
+        ? translateSearchTermsForPexels(scene.searchTerms)
+        : scene.searchTerms;
+        
       const video = await this.pexelsApi.findVideo(
-        scene.searchTerms,
+        translatedSearchTerms,
         audioLength,
         excludeVideoIds,
         orientation,
@@ -292,6 +305,6 @@ export class ShortCreator {
   }
 
   public ListAvailableVoices(): string[] {
-    return this.kokoro.listAvailableVoices();
+    return this.unifiedTTS.listAvailableVoices();
   }
 }

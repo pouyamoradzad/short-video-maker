@@ -14,6 +14,7 @@ import {
   createCaptionPages,
   shortVideoSchema,
 } from "../utils";
+import { isRTL } from "../../utils/languageDetection";
 
 const { fontFamily } = loadFont(); // "Barlow Condensed"
 
@@ -62,6 +63,10 @@ export const LandscapeVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
 
       {scenes.map((scene, i) => {
         const { captions, audio, video } = scene;
+        
+        // Check if any caption contains RTL text
+        const hasRTLText = captions.some(caption => isRTL(caption.text));
+        
         const pages = createCaptionPages({
           captions,
           lineMaxLength: 30,
@@ -122,6 +127,9 @@ export const LandscapeVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
                             width: "100%",
                             // uppercase
                             textTransform: "uppercase",
+                            // RTL support for Persian text
+                            direction: hasRTLText ? "rtl" : "ltr",
+                            unicodeBidi: hasRTLText ? "bidi-override" : "normal",
                           }}
                           key={`scene-${i}-page-${j}-line-${k}`}
                         >

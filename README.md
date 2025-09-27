@@ -68,31 +68,37 @@ You can find example n8n workflows created with the REST/MCP server [in this rep
 # Features
 
 - Generate complete short videos from text prompts
-- Text-to-speech conversion
-- Automatic caption generation and styling
+- Text-to-speech conversion (English with Kokoro, Persian with OpenAI TTS)
+- Automatic caption generation and styling with RTL support for Persian
 - Background video search and selection via Pexels
 - Background music with genre/mood selection
+- Multi-language support (English and Persian)
+- Automatic language detection
 - Serve as both REST API and Model Context Protocol (MCP) server
 
 # How It Works
 
 Shorts Creator takes simple text inputs and search terms, then:
 
-1. Converts text to speech using Kokoro TTS
-2. Generates accurate captions via Whisper
-3. Finds relevant background videos from Pexels
-4. Composes all elements with Remotion
-5. Renders a professional-looking short video with perfectly timed captions
+1. Detects language automatically or uses specified language
+2. Converts text to speech using Kokoro TTS (English) or OpenAI TTS (Persian)
+3. Generates accurate captions via Whisper with language-specific models
+4. Translates Persian search terms to English for Pexels API
+5. Finds relevant background videos from Pexels
+6. Composes all elements with Remotion with RTL support for Persian text
+7. Renders a professional-looking short video with perfectly timed captions
 
 # Limitations
 
-- The project only capable generating videos with English voiceover (kokoro-js doesn’t support other languages at the moment)
+- Persian TTS requires OpenAI API key (optional, falls back to English if not provided)
 - The background videos are sourced from Pexels
+- Persian search terms are translated to English for video search
 
 # General Requirements
 
 - internet
 - free pexels api key
+- OpenAI API key (optional, for Persian TTS support)
 - ≥ 3 gb free RAM, my recommendation is 4gb RAM
 - ≥ 2 vCPU
 - ≥ 5gb disc space
@@ -219,13 +225,15 @@ You can load it on http://localhost:3123
 | WHISPER_VERBOSE | whether the output of whisper.cpp should be forwarded to stdout | false   |
 | PORT            | the port the server will listen on                              | 3123    |
 
-## ⚙️ System configuration
+## ⚙️ System configuration
 
 | key                       | description                                                                                                                                                                                                                                                                           | default                                                     |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | KOKORO_MODEL_PRECISION    | The size of the Kokoro model to use. Valid options are `fp32`, `fp16`, `q8`, `q4`, `q4f16`                                                                                                                                                                                            | depends, see the descriptions of the docker images above ^^ |
 | CONCURRENCY               | [concurrency refers to how many browser tabs are opened in parallel during a render. Each Chrome tab renders web content and then screenshots it.](https://www.remotion.dev/docs/terminology/concurrency). Tweaking this value helps with running the project with limited resources. | depends, see the descriptions of the docker images above ^^ |
-| VIDEO_CACHE_SIZE_IN_BYTES | Cache for [<OffthreadVideo>](https://remotion.dev/docs/offthreadvideo) frames in Remotion. Tweaking this value helps with running the project with limited resources.                                                                                                                 | depends, see the descriptions of the docker images above ^^ |
+| VIDEO_CACHE_SIZE_IN_BYTES | Cache for [<OffthreadVideo>](https://remotion.dev/docs/offthreadvideo) frames in Remotion. Tweaking this value helps with running the project with limited resources.                                                                                                                 | depends, see the descriptions of the docker images above ^^ |
+| OPENAI_API_KEY            | OpenAI API key for Persian TTS support. Optional - if not provided, Persian videos will fall back to English TTS.                                                                                                                                                                    |                                                             |
+| DEFAULT_LANGUAGE          | Default language for video generation. Valid options are `en`, `fa`. If not specified, language will be auto-detected from text.                                                                                                                                                    | `en`                                                        |
 
 ## ⚠️ Danger zone
 
@@ -415,6 +423,61 @@ curl --location 'localhost:3123/api/music-tags'
 ]
 ```
 
+## Persian Language Support
+
+The short-video-maker now supports Persian language for creating videos with Persian text, TTS, and captions.
+
+### Features
+
+- **Automatic Language Detection**: Detects Persian text automatically
+- **Persian TTS**: Uses OpenAI TTS API for high-quality Persian speech synthesis
+- **RTL Caption Support**: Properly renders Persian text with right-to-left direction
+- **Search Term Translation**: Translates Persian search terms to English for Pexels API
+- **Mixed Language Support**: Can handle videos with both English and Persian content
+
+### Persian Example
+
+```bash
+curl --location 'localhost:3123/api/short-video' \
+--header 'Content-Type: application/json' \
+--data '{
+    "scenes": [
+      {
+        "text": "سلام! این یک ویدیو فارسی است که با هوش مصنوعی ساخته شده است.",
+        "searchTerms": ["طبیعت", "کوه", "آسمان"]
+      }
+    ],
+    "config": {
+      "paddingBack": 2000,
+      "music": "hopeful",
+      "language": "fa"
+    }
+}'
+```
+
+### Configuration Options
+
+- `language`: Set to `"fa"` for Persian, `"en"` for English, or omit for auto-detection
+- `OPENAI_API_KEY`: Required for Persian TTS (optional - falls back to English if not provided)
+
+### Persian Search Terms
+
+The system automatically translates common Persian search terms to English for the Pexels API:
+
+- طبیعت → nature
+- کوه → mountain  
+- دریا → sea
+- شهر → city
+- مردم → people
+- And many more...
+
+### RTL Caption Rendering
+
+Persian captions are automatically rendered with:
+- Right-to-left text direction
+- Proper Unicode bidirectional text support
+- Persian font compatibility
+
 # Troubleshooting
 
 ## Docker
@@ -450,7 +513,13 @@ While each VPS provider is different, and it’s impossible to provide configura
 
 ## Can I use other languages? (French, German etc.)
 
-Unfortunately, it’s not possible at the moment. Kokoro-js only supports English.
+The system currently supports English and Persian languages. For Persian:
+- Uses OpenAI TTS API for high-quality Persian speech synthesis
+- Supports RTL caption rendering
+- Automatically translates Persian search terms to English for video search
+- Requires OPENAI_API_KEY environment variable
+
+For other languages, the system would need additional TTS providers and language-specific models.
 
 ## Can I pass in images and videos and can it stitch it together
 
