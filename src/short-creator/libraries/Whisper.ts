@@ -6,8 +6,9 @@ import {
 import path from "path";
 
 import { Config } from "../../config";
-import type { Caption } from "../../types/shorts";
+import type { Caption, SupportedLanguage } from "../../types/shorts";
 import { logger } from "../../logger";
+import { getWhisperModelForLanguage } from "../../utils/languageDetection";
 
 export const ErrorWhisper = new Error("There was an error with WhisperCpp");
 
@@ -44,10 +45,13 @@ export class Whisper {
   }
 
   // todo shall we extract it to a Caption class?
-  async CreateCaption(audioPath: string): Promise<Caption[]> {
-    logger.debug({ audioPath }, "Starting to transcribe audio");
+  async CreateCaption(audioPath: string, language?: SupportedLanguage): Promise<Caption[]> {
+    const targetLanguage = language || this.config.defaultLanguage;
+    const model = getWhisperModelForLanguage(targetLanguage);
+    
+    logger.debug({ audioPath, language: targetLanguage, model }, "Starting to transcribe audio");
     const { transcription } = await transcribe({
-      model: this.config.whisperModel,
+      model: model,
       whisperPath: this.config.whisperInstallPath,
       modelFolder: path.join(this.config.whisperInstallPath, "models"),
       whisperCppVersion: this.config.whisperVersion,

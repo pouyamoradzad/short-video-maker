@@ -86,7 +86,8 @@ Shorts Creator takes simple text inputs and search terms, then:
 
 # Limitations
 
-- The project only capable generating videos with English voiceover (kokoro-js doesn’t support other languages at the moment)
+- The project supports English and Persian languages for voiceover
+- For Persian TTS, OpenAI API key is required (OPENAI_API_KEY environment variable)
 - The background videos are sourced from Pexels
 
 # General Requirements
@@ -210,11 +211,13 @@ You can load it on http://localhost:3123
 
 # Environment variables
 
-## 🟢 Configuration
+## 🟢 Configuration
 
 | key             | description                                                     | default |
 | --------------- | --------------------------------------------------------------- | ------- |
 | PEXELS_API_KEY  | [your (free) Pexels API key](https://www.pexels.com/api/)       |         |
+| OPENAI_API_KEY | OpenAI API key for Persian TTS (optional)                      |         |
+| DEFAULT_LANGUAGE| Default language (en/fa)                                        | en      |
 | LOG_LEVEL       | pino log level                                                  | info    |
 | WHISPER_VERBOSE | whether the output of whisper.cpp should be forwarded to stdout | false   |
 | PORT            | the port the server will listen on                              | 3123    |
@@ -446,11 +449,77 @@ While each VPS provider is different, and it’s impossible to provide configura
 - Use [pm2](https://pm2.keymetrics.io/) to run/manage the server
 - Put the environment variables to the `.bashrc` file (or similar)
 
+# Persian Language Support
+
+The short-video-maker now supports Persian language for creating videos with Persian text-to-speech and captions.
+
+## Features
+
+- **Persian TTS**: Uses OpenAI TTS API for high-quality Persian voice synthesis
+- **RTL Captions**: Automatic right-to-left text rendering for Persian captions
+- **Language Detection**: Automatic detection of Persian vs English text
+- **Search Term Translation**: Persian search terms are translated to English for Pexels video search
+- **Mixed Language Support**: Create videos with both English and Persian content
+
+## Setup for Persian
+
+1. **Get OpenAI API Key**: Sign up at [OpenAI](https://platform.openai.com/) and get your API key
+2. **Set Environment Variable**: 
+   ```bash
+   export OPENAI_API_KEY="your-openai-api-key"
+   ```
+3. **Configure Language**: Set default language to Persian (optional)
+   ```bash
+   export DEFAULT_LANGUAGE="fa"
+   ```
+
+## Usage Examples
+
+### Persian Video Example
+```javascript
+const response = await axios.post('http://localhost:3123/api/short-video', {
+  scenes: [
+    {
+      text: "سلام! امروز می‌خواهم درباره تکنولوژی صحبت کنم.",
+      searchTerms: ["تکنولوژی", "کامپیوتر", "موبایل"],
+      language: "fa" // Explicitly specify Persian
+    }
+  ],
+  config: {
+    music: "chill",
+    captionPosition: "center"
+  }
+});
+```
+
+### Mixed Language Example
+```javascript
+const response = await axios.post('http://localhost:3123/api/short-video', {
+  scenes: [
+    {
+      text: "Welcome to our channel!",
+      searchTerms: ["welcome", "technology"]
+      // Language auto-detected as English
+    },
+    {
+      text: "در ادامه درباره هوش مصنوعی صحبت خواهیم کرد.",
+      searchTerms: ["هوش مصنوعی", "آینده"]
+      // Language auto-detected as Persian
+    }
+  ]
+});
+```
+
+## API Endpoints
+
+- `GET /api/voices?language=fa` - Get available voices for Persian
+- `GET /api/voices?language=en` - Get available voices for English
+
 # FAQ
 
 ## Can I use other languages? (French, German etc.)
 
-Unfortunately, it’s not possible at the moment. Kokoro-js only supports English.
+Currently supported languages are English and Persian. For Persian, you need an OpenAI API key. Other languages may be added in the future.
 
 ## Can I pass in images and videos and can it stitch it together
 

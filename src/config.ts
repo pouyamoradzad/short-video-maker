@@ -3,7 +3,7 @@ import "dotenv/config";
 import os from "os";
 import fs from "fs-extra";
 import pino from "pino";
-import { kokoroModelPrecision, whisperModels } from "./types/shorts";
+import { kokoroModelPrecision, whisperModels, LanguageEnum } from "./types/shorts";
 
 const defaultLogLevel: pino.Level = "info";
 const defaultPort = 3123;
@@ -46,6 +46,7 @@ export class Config {
   public whisperVersion: string = whisperVersion;
   public whisperModel: whisperModels = defaultWhisperModel;
   public kokoroModelPrecision: kokoroModelPrecision = "fp32";
+  public defaultLanguage: LanguageEnum = LanguageEnum.english;
 
   // docker-specific, performance-related settings to prevent memory issues
   public concurrency?: number;
@@ -97,6 +98,10 @@ export class Config {
       this.videoCacheSizeInBytes = parseInt(
         process.env.VIDEO_CACHE_SIZE_IN_BYTES,
       );
+    }
+
+    if (process.env.DEFAULT_LANGUAGE) {
+      this.defaultLanguage = process.env.DEFAULT_LANGUAGE as LanguageEnum;
     }
   }
 

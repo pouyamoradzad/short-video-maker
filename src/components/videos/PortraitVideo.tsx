@@ -14,6 +14,7 @@ import {
   createCaptionPages,
   shortVideoSchema,
 } from "../utils";
+import { isRTL } from "../../utils/languageDetection";
 
 const { fontFamily } = loadFont(); // "Barlow Condensed"
 
@@ -122,6 +123,8 @@ export const PortraitVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
                             width: "100%",
                             // uppercase
                             textTransform: "uppercase",
+                            // RTL support for Persian
+                            direction: isRTL(line.texts.map(t => t.text).join(" ")) ? "rtl" : "ltr",
                           }}
                           key={`scene-${i}-page-${j}-line-${k}`}
                         >
