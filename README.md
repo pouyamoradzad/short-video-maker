@@ -86,8 +86,37 @@ Shorts Creator takes simple text inputs and search terms, then:
 
 # Limitations
 
-- The project only capable generating videos with English voiceover (kokoro-js doesn’t support other languages at the moment)
 - The background videos are sourced from Pexels
+
+### New: Persian (Farsi) support
+
+- Voiceover: Uses OpenAI TTS when `OPENAI_API_KEY` is provided and `language` is set to `fa`.
+- Captions: Whisper default changed to the multilingual `large-v3` model. Captions render RTL and avoid forced uppercase in Persian.
+- Search: Persian `searchTerms` are translated to English for Pexels via OpenAI.
+
+Setup for Persian:
+
+1. Set environment variables:
+
+```bash
+export PEXELS_API_KEY=YOUR_KEY
+export OPENAI_API_KEY=YOUR_KEY
+```
+
+2. Send a request with Persian text and `language: "fa"`:
+
+```bash
+curl --location 'localhost:3123/api/short-video' \
+--header 'Content-Type: application/json' \
+--data '{
+  "scenes": [
+    { "text": "سگ‌ها همراهان وفادار انسان هستند.", "searchTerms": ["سگ", "پارک", "دویدن"] }
+  ],
+  "config": { "paddingBack": 1500, "music": "happy", "language": "fa" }
+}'
+```
+
+Fonts: The default uses Barlow Condensed. For Persian clarity, you may bundle a Persian font (e.g., Vazirmatn) in the UI if desired.
 
 # General Requirements
 

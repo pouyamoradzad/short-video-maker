@@ -7,10 +7,12 @@ import https from "https";
 import http from "http";
 
 import { Kokoro } from "./libraries/Kokoro";
+import { OpenAITTS } from "./libraries/OpenAITTS";
 import { Remotion } from "./libraries/Remotion";
 import { Whisper } from "./libraries/Whisper";
 import { FFMpeg } from "./libraries/FFmpeg";
 import { PexelsAPI } from "./libraries/Pexels";
+import { Translator } from "./libraries/Translator";
 import { Config } from "../config";
 import { logger } from "../logger";
 import { MusicManager } from "./music";
@@ -34,9 +36,11 @@ export class ShortCreator {
     private config: Config,
     private remotion: Remotion,
     private kokoro: Kokoro,
+    private openaiTTS: OpenAITTS | null,
     private whisper: Whisper,
     private ffmpeg: FFMpeg,
     private pexelsApi: PexelsAPI,
+    private translator: Translator,
     private musicManager: MusicManager,
   ) {}
 
@@ -107,11 +111,17 @@ export class ShortCreator {
       config.orientation || OrientationEnum.portrait;
 
     let index = 0;
+    const detectFa = (text: string) => /[\u0600-\u06FF]/.test(text);
+    const language =
+      config.language ??
+      (inputScenes.some((s) => detectFa(s.text)) ? "fa" : "en");
+    const isPersian = language.toLowerCase().startsWith("fa");
+
     for (const scene of inputScenes) {
-      const audio = await this.kokoro.generate(
-        scene.text,
-        config.voice ?? "af_heart",
-      );
+      // Select TTS engine based on language
+      const audio = isPersian && this.openaiTTS
+        ? await this.openaiTTS.generate(scene.text, language, "verse")
+        : await this.kokoro.generate(scene.text, config.voice ?? "af_heart");
       let { audioLength } = audio;
       const { audio: audioStream } = audio;
 
@@ -137,8 +147,13 @@ export class ShortCreator {
       const captions = await this.whisper.CreateCaption(tempWavPath);
 
       await this.ffmpeg.saveToMp3(audioStream, tempMp3Path);
+      // For Pexels search, translate Persian keywords to English
+      const searchTerms = isPersian
+        ? await this.translator.faToEnKeywords(scene.searchTerms)
+        : scene.searchTerms;
+
       const video = await this.pexelsApi.findVideo(
-        scene.searchTerms,
+        searchTerms,
         audioLength,
         excludeVideoIds,
         orientation,
@@ -205,6 +220,8 @@ export class ShortCreator {
             captionPosition: config.captionPosition,
           },
           musicVolume: config.musicVolume,
+            language,
+            rtl: isPersian,
         },
       },
       videoId,

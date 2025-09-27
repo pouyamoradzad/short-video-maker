@@ -116,6 +116,12 @@ export const renderConfig = z.object({
     .nativeEnum(MusicVolumeEnum)
     .optional()
     .describe("Volume of the music, default is high"),
+  language: z
+    .string()
+    .optional()
+    .describe(
+      "BCP-47 language code (e.g. 'en', 'fa'). Defaults to 'en' if omitted.",
+    ),
 });
 export type RenderConfig = z.infer<typeof renderConfig>;
 
