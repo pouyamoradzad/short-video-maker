@@ -7,18 +7,18 @@ Content-Type: application/json
 {
     "scenes": [
       {
-        "text": "hello world",
-        "searchTerms": ["rain"]
+        "text": "سگ‌ها همراهان وفادار انسان هستند.",
+        "searchTerms": ["سگ", "پارک", "دویدن"]
       }
     ],
     "config": {
       "paddingBack": 1500,
-      "music": "uneasy",
+      "music": "happy",
       "captionPosition": "center",
-      "captionBackgroundColor": "#ff0000",
-      "voice": "bm_lewis",
-      "orientation": "landscape",
-      "musicVolume": "muted"
+      "captionBackgroundColor": "#0072ff",
+      "orientation": "portrait",
+      "musicVolume": "high",
+      "language": "fa"
     }
 }
 

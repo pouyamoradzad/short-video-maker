@@ -26,6 +26,7 @@ export const PortraitVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
   const { fps } = useVideoConfig();
 
   const captionBackgroundColor = config.captionBackgroundColor ?? "blue";
+  const isRTL = Boolean(config.rtl);
 
   const activeStyle = {
     backgroundColor: captionBackgroundColor,
@@ -49,8 +50,12 @@ export const PortraitVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
 
   const [musicVolume, musicMuted] = calculateVolume(config.musicVolume);
 
+  const appliedFontFamily = isRTL
+    ? "Vazirmatn, Tahoma, Arial, sans-serif"
+    : fontFamily;
+
   return (
-    <AbsoluteFill style={{ backgroundColor: "white" }}>
+    <AbsoluteFill style={{ backgroundColor: "white", direction: isRTL ? "rtl" : "ltr" }}>
       <Audio
         loop
         src={music.url}
@@ -112,7 +117,7 @@ export const PortraitVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
                         <p
                           style={{
                             fontSize: "6em",
-                            fontFamily: fontFamily,
+                            fontFamily: appliedFontFamily,
                             fontWeight: "black",
                             color: "white",
                             WebkitTextStroke: "2px black",
@@ -121,7 +126,7 @@ export const PortraitVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
                             textAlign: "center",
                             width: "100%",
                             // uppercase
-                            textTransform: "uppercase",
+                            textTransform: isRTL ? "none" : "uppercase",
                           }}
                           key={`scene-${i}-page-${j}-line-${k}`}
                         >
@@ -141,7 +146,7 @@ export const PortraitVideo: React.FC<z.infer<typeof shortVideoSchema>> = ({
                                 >
                                   {text.text}
                                 </span>
-                                {l < line.texts.length - 1 ? " " : ""}
+                                {l < line.texts.length - 1 ? (isRTL ? "\u200F" : " ") : ""}
                               </>
                             );
                           })}

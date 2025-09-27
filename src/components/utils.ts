@@ -25,6 +25,8 @@ export const shortVideoSchema = z.object({
     captionBackgroundColor: z.string().optional(),
     durationMs: z.number(),
     musicVolume: z.nativeEnum(MusicVolumeEnum).optional(),
+    language: z.string().optional(),
+    rtl: z.boolean().optional(),
   }),
   music: z.object({
     file: z.string(),

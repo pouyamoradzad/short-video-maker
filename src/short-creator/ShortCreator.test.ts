@@ -11,6 +11,8 @@ import { FFMpeg } from "./libraries/FFmpeg";
 import { PexelsAPI } from "./libraries/Pexels";
 import { Config } from "../config";
 import { MusicManager } from "./music";
+import { OpenAITTS } from "./libraries/OpenAITTS";
+import { Translator } from "./libraries/Translator";
 
 // mock fs-extra
 vi.mock("fs-extra", async () => {
@@ -183,9 +185,11 @@ test("test me", async () => {
     config,
     remotion,
     kokoro,
+    null,
     whisper,
     ffmpeg,
     pexelsAPI,
+    new Translator(config),
     musicManager,
   );
 
@@ -217,4 +221,63 @@ test("test me", async () => {
   // check the status of the video directly
   const status = shortCreator.status(videoId);
   expect(status).toBe("ready");
+});
+
+test("rtl flag is passed when language is fa", async () => {
+  const config = new Config();
+  const remotion = await Remotion.init(config);
+  const kokoro = await Kokoro.init("fp16");
+  const whisper = await Whisper.init(config);
+  const ffmpeg = await FFMpeg.init();
+  const pexelsAPI = new PexelsAPI("mock-api-key");
+  const musicManager = new MusicManager(config);
+
+  vi.spyOn(pexelsAPI, "findVideo").mockResolvedValue({
+    id: "vid",
+    url: "https://example.com/vid.mp4",
+    width: 1080,
+    height: 1920,
+  });
+  vi.spyOn(ffmpeg, "saveNormalizedAudio").mockResolvedValue("a.wav");
+  vi.spyOn(ffmpeg, "saveToMp3").mockResolvedValue("a.mp3");
+  vi.spyOn(whisper, "CreateCaption").mockResolvedValue([
+    { text: "سلام", startMs: 0, endMs: 1000 },
+  ]);
+
+  const openai = {
+    generate: vi
+      .fn()
+      .mockResolvedValue({ audio: new ArrayBuffer(8), audioLength: 1.0 }),
+  } as unknown as OpenAITTS;
+
+  const shortCreator = new ShortCreator(
+    config,
+    remotion,
+    kokoro,
+    openai,
+    whisper,
+    ffmpeg,
+    pexelsAPI,
+    new Translator(config),
+    musicManager,
+  );
+
+  const spyRender = vi.spyOn(remotion, "render").mockResolvedValue();
+
+  const id = shortCreator.addToQueue(
+    [
+      {
+        text: "سلام دنیا",
+        searchTerms: ["سگ"],
+      },
+    ],
+    {
+      language: "fa",
+    } as any,
+  );
+
+  await new Promise((r) => setTimeout(r, 50));
+  expect(spyRender).toHaveBeenCalled();
+  const args = spyRender.mock.calls[0][0];
+  expect(args.config.rtl).toBe(true);
 });
