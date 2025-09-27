@@ -96,7 +96,8 @@ export class APIRouter {
     );
 
     this.router.get("/voices", (req: ExpressRequest, res: ExpressResponse) => {
-      res.status(200).json(this.shortCreator.ListAvailableVoices());
+      const language = req.query.language as string;
+      res.status(200).json(this.shortCreator.ListAvailableVoices(language as any));
     });
 
     this.router.get(

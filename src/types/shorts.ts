@@ -37,6 +37,10 @@ export const sceneInput = z.object({
     .describe(
       "Search term for video, 1 word, and at least 2-3 search terms should be provided for each scene. Make sure to match the overall context with the word - regardless what the video search result would be.",
     ),
+  language: z
+    .nativeEnum(LanguageEnum)
+    .optional()
+    .describe("Language of the text (en for English, fa for Persian). If not specified, will be auto-detected."),
 });
 export type SceneInput = z.infer<typeof sceneInput>;
 
@@ -177,3 +181,10 @@ export type whisperModels =
   | "large-v2"
   | "large-v3"
   | "large-v3-turbo";
+
+export enum LanguageEnum {
+  english = "en",
+  persian = "fa",
+}
+
+export type SupportedLanguage = `${LanguageEnum}`;
